@@ -6,6 +6,8 @@ TagManager:
   tags:
   - PlataformaMovil
   - MovingPlatform
+  - pastilla_larga
+  - pastilla_corta
   layers:
   - Default
   - TransparentFX
