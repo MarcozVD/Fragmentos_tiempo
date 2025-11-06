@@ -6,22 +6,26 @@ public class RespawnPickup : MonoBehaviour
     [Header("Tiempo de respawn")]
     public float respawnTime = 7f;
 
-    private Collider col;
-    private Renderer rend;
+    private Collider[] colliders;
+    private Renderer[] renderers;
 
     void Start()
     {
-        col = GetComponent<Collider>();
-        rend = GetComponent<Renderer>();
+        // 🔹 Obtiene TODOS los colliders y renderers del objeto y sus hijos
+        colliders = GetComponentsInChildren<Collider>();
+        renderers = GetComponentsInChildren<Renderer>();
     }
 
     public void PickUp()
     {
-        // Desactivar visual y colisión
-        col.enabled = false;
-        rend.enabled = false;
+        // 🔹 Desactivar visual y colisiones
+        foreach (var col in colliders)
+            col.enabled = false;
 
-        // Iniciar el respawn
+        foreach (var rend in renderers)
+            rend.enabled = false;
+
+        // 🔹 Iniciar el respawn
         StartCoroutine(RespawnAfterDelay());
     }
 
@@ -29,8 +33,11 @@ public class RespawnPickup : MonoBehaviour
     {
         yield return new WaitForSeconds(respawnTime);
 
-        // Reactivar visual y colisión
-        col.enabled = true;
-        rend.enabled = true;
+        // 🔹 Reactivar visual y colisiones
+        foreach (var col in colliders)
+            col.enabled = true;
+
+        foreach (var rend in renderers)
+            rend.enabled = true;
     }
 }

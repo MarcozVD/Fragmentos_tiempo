@@ -8,7 +8,7 @@ public class obtenerTiempo : MonoBehaviour
     {
         if (other.CompareTag("pastilla_larga"))
         {
-            timerUI.AddTime(20f);
+            timerUI.AddTime(15f);
             RespawnPickup pickup = other.GetComponent<RespawnPickup>();
             if (pickup != null) pickup.PickUp();
         }

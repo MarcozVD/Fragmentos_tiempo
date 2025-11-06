@@ -26,10 +26,11 @@ public class EnemiHit : MonoBehaviour
             rb = gameObject.AddComponent<Rigidbody>();
         }
 
-        // ✅ Aseguramos que el Rigidbody sea dinámico (no cinemático)
-        rb.isKinematic = false;
-        rb.useGravity = true;
+        // ✅ Hacemos el Rigidbody cinemático para evitar bugs con el movimiento manual
+        rb.isKinematic = true;
+        rb.useGravity = false;
     }
+
 
     // 🔹 Detecta cuando el jugador entra en contacto físico con el enemigo
     private void OnCollisionEnter(Collision collision)
@@ -47,7 +48,7 @@ public class EnemiHit : MonoBehaviour
         if (playerInContact && collision.gameObject.CompareTag("Player") && Time.time >= nextDamageTime)
         {
             cronometro.AddTime(-damageTime);  // ❌ resta tiempo del cronómetro
-            Debug.Log($"💥 Golpe enemigo - {damageTime}s menos. Tiempo actual: {cronometro.RemainingTime}");
+            Debug.Log($" Golpe enemigo - {damageTime}s menos. Tiempo actual: {cronometro.RemainingTime}");
 
             nextDamageTime = Time.time + damageInterval;
         }

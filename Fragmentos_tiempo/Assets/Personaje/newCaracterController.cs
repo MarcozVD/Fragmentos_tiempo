@@ -34,6 +34,7 @@ public class newCharacterController : MonoBehaviour
     [Header("Giro tipo Crash")]
     public float spinSpeed = 1080f; // velocidad del giro (grados/seg)
     private bool isSpinActive = false;
+    private bool canSpin = false;   // 🔸 solo se activa al recoger la jeringa
 
     void Start()
     {
@@ -98,11 +99,9 @@ public class newCharacterController : MonoBehaviour
 
         Velocity.y += gravity * Time.deltaTime;
 
-        // 🔹 Movimiento del jugador
         Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;
         finalMovement.y += Velocity.y * Time.deltaTime;
 
-        // 🔹 Si está sobre una plataforma, añade su desplazamiento
         if (currentPlatform != null)
         {
             Vector3 platformMovement = currentPlatform.position - lastPlatformPosition;
@@ -124,7 +123,6 @@ public class newCharacterController : MonoBehaviour
         animator?.SetFloat("VerticalSpeed", Velocity.y);
     }
 
-    // 🔹 Detecta si el player está sobre una plataforma
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
         if (hit.collider.GetComponent<MovingPlatform>() != null)
@@ -145,10 +143,10 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // 🔹 Giro tipo Crash (se mantiene mientras presionas E)
+    // 🔹 Giro tipo Crash (ahora solo si se tiene la habilidad)
     void HandleSpin()
     {
-        if (Input.GetKey(KeyCode.E))
+        if (canSpin && Input.GetKey(KeyCode.E))
         {
             isSpinActive = true;
             transform.Rotate(Vector3.up, spinSpeed * Time.deltaTime, Space.World);
@@ -157,5 +155,12 @@ public class newCharacterController : MonoBehaviour
         {
             isSpinActive = false;
         }
+    }
+
+    // 🔹 Se llama cuando el jugador recoge la jeringa
+    public void EnableSpinAbility()
+    {
+        canSpin = true;
+        Debug.Log("🌀 ¡Habilidad de giro activada permanentemente!");
     }
 }
