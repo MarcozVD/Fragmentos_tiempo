@@ -1,65 +1,48 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class EnemiHit : MonoBehaviour
 {
     [Header("Daño por contacto")]
-    public float damageTime = 5f;          // segundos que se restan al tocar
-    public float damageInterval = 1f;      // tiempo entre cada daño (en segundos)
+    public float damageTime = 5f;          // segundos que se restan
+    public float damageInterval = 1f;      // tiempo entre cada daño
+    public float knockbackForce = 5f;      // fuerza de retroceso
 
     private Cronometro cronometro;
-    private bool playerInContact = false;
     private float nextDamageTime = 0f;
 
     void Start()
     {
         cronometro = FindObjectOfType<Cronometro>();
-
         if (cronometro == null)
-        {
             Debug.LogError("❌ No se encontró el Cronometro en la escena.");
-        }
 
+        // 🔹 Asegurar collider tipo trigger
+        Collider col = GetComponent<Collider>();
+        col.isTrigger = true;
+
+        // 🔹 No necesitamos Rigidbody para triggers
         Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb == null)
-        {
-            Debug.LogWarning("⚠️ El enemigo no tiene Rigidbody. Se agregará uno automáticamente.");
-            rb = gameObject.AddComponent<Rigidbody>();
-        }
-
-        // ✅ Hacemos el Rigidbody cinemático para evitar bugs con el movimiento manual
-        rb.isKinematic = true;
-        rb.useGravity = false;
+        if (rb != null)
+            Destroy(rb);
     }
 
-
-    // 🔹 Detecta cuando el jugador entra en contacto físico con el enemigo
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerStay(Collider other)
     {
-        if (collision.gameObject.CompareTag("Player"))
+        if (other.CompareTag("Player") && Time.time >= nextDamageTime)
         {
-            playerInContact = true;
-            nextDamageTime = Time.time; // reinicia el temporizador de daño
-        }
-    }
+            cronometro.AddTime(-damageTime);
+            Debug.Log($"💥 Golpe enemigo - {damageTime}s menos. Tiempo actual: {cronometro.RemainingTime}");
 
-    // 🔹 Mientras el jugador esté en contacto con el enemigo
-    private void OnCollisionStay(Collision collision)
-    {
-        if (playerInContact && collision.gameObject.CompareTag("Player") && Time.time >= nextDamageTime)
-        {
-            cronometro.AddTime(-damageTime);  // ❌ resta tiempo del cronómetro
-            Debug.Log($" Golpe enemigo - {damageTime}s menos. Tiempo actual: {cronometro.RemainingTime}");
+            // 🌀 Retroceso
+            Retroceso retroceso = other.GetComponent<Retroceso>();
+            if (retroceso != null)
+            {
+                Vector3 direction = (other.transform.position - transform.position).normalized;
+                retroceso.ApplyKnockback(direction, knockbackForce, 0.2f);
+            }
 
             nextDamageTime = Time.time + damageInterval;
-        }
-    }
-
-    // 🔹 Cuando el jugador deja de tocar al enemigo
-    private void OnCollisionExit(Collision collision)
-    {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            playerInContact = false;
         }
     }
 }

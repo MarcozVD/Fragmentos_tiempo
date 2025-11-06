@@ -34,7 +34,7 @@ public class newCharacterController : MonoBehaviour
     [Header("Giro tipo Crash")]
     public float spinSpeed = 1080f; // velocidad del giro (grados/seg)
     private bool isSpinActive = false;
-    private bool canSpin = false;   // 🔸 solo se activa al recoger la jeringa
+    private bool canSpin = false; // solo se activa al recoger la jeringa
 
     void Start()
     {
@@ -49,6 +49,13 @@ public class newCharacterController : MonoBehaviour
         HandleMovement();
         HandleSpin();
         UpdateAnimator();
+
+        // Aplicar fuerza externa (como rebote)
+        if (externalForce.magnitude > 0.1f)
+        {
+            characterController.Move(externalForce * Time.deltaTime);
+            externalForce = Vector3.Lerp(externalForce, Vector3.zero, Time.deltaTime * 5f);
+        }
     }
 
     void HandleCameraRotation()
@@ -70,13 +77,14 @@ public class newCharacterController : MonoBehaviour
         Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
 
         IsMoving = inputDirection.magnitude > 0.1f;
+
         Vector3 moveDirection = Vector3.zero;
 
         if (IsMoving)
         {
             moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
 
-            // ⚠️ Solo rotamos si NO está en modo de giro libre
+            // Solo rotamos si no está girando
             if (!isSpinActive)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
@@ -143,7 +151,7 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // 🔹 Giro tipo Crash (ahora solo si se tiene la habilidad)
+    // 🔹 Giro tipo Crash
     void HandleSpin()
     {
         if (canSpin && Input.GetKey(KeyCode.E))
@@ -157,10 +165,22 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // 🔹 Se llama cuando el jugador recoge la jeringa
+    // 🔹 Habilitar giro
     public void EnableSpinAbility()
     {
         canSpin = true;
-        Debug.Log("🌀 ¡Habilidad de giro activada permanentemente!");
+        Debug.Log("Habilidad de giro activada");
+    }
+
+    private Vector3 externalForce = Vector3.zero;
+    public void ApplyExternalForce(Vector3 force)
+    {
+        externalForce = force;
+    }
+
+    // 🔹 Método público para que JumpKill detecte si está girando
+    public bool IsSpinning()
+    {
+        return isSpinActive;
     }
 }
