@@ -8,6 +8,7 @@ TagManager:
   - MovingPlatform
   - pastilla_larga
   - pastilla_corta
+  - enemigo
   layers:
   - Default
   - TransparentFX

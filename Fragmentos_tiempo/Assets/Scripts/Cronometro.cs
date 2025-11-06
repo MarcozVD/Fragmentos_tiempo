@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class TimerUI : MonoBehaviour
+public class Cronometro : MonoBehaviour
 {
     [Header("Tiempo inicial (segundos)")]
     public float startTime = 120f; // 2 minutos
@@ -11,6 +11,9 @@ public class TimerUI : MonoBehaviour
 
     private float currentTime;
     private bool isRunning = true;
+
+    // 🔹 Propiedad pública para consultar el tiempo restante
+    public float RemainingTime => currentTime;
 
     void Start()
     {
@@ -40,7 +43,7 @@ public class TimerUI : MonoBehaviour
         timerText.text = $"{minutes:00}:{seconds:00}";
     }
 
-    // 🔹 Método público para añadir tiempo desde otro script
+    // 🔹 Método público para añadir o restar tiempo desde otro script
     public void AddTime(float amount)
     {
         currentTime += amount;
