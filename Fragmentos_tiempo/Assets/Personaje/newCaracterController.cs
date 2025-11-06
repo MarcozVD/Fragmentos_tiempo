@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-[RequireComponent(typeof(CharacterController))]
 
-public class newCaracterController : MonoBehaviour
+[RequireComponent(typeof(CharacterController))]
+public class newCharacterController : MonoBehaviour
 {
     [Header("Movimiento")]
     public float WalkSpeed = 4f;
@@ -13,7 +13,7 @@ public class newCaracterController : MonoBehaviour
     public float mouseSensitivity = 1f;
     public float gravity = -20f;
 
-    [Header("Referenciacion")]
+    [Header("Referencias")]
     public Transform cameraTransform;
     public Animator animator;
 
@@ -22,92 +22,140 @@ public class newCaracterController : MonoBehaviour
     private float currentSpeed;
     private float yaw;
     private Vector3 externalVelocity = Vector3.zero;
-    // Start is called before the first frame update
+
     public bool IsMoving { get; private set; }
-    public Vector2 CurrentInput { get; private set; }
     public bool IsGrounded { get; private set; }
-    public float CurrenYaw => yaw;
+
+    // 🔹 Variables para plataforma
+    private Transform currentPlatform;
+    private Vector3 lastPlatformPosition;
+
+    // 🔹 Giro tipo Crash
+    [Header("Giro tipo Crash")]
+    public float spinSpeed = 1080f; // velocidad del giro (grados/seg)
+    private bool isSpinActive = false;
+
     void Start()
     {
         characterController = GetComponent<CharacterController>();
         Cursor.lockState = CursorLockMode.Locked;
-        
+        Cursor.visible = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        HandleMovent();
-        HandleRotation();
-        updateAnimate();
-
+        HandleCameraRotation();
+        HandleMovement();
+        HandleSpin();
+        UpdateAnimator();
     }
 
-    void HandleMovent()
+    void HandleCameraRotation()
+    {
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
+        yaw += mouseX;
+        cameraTransform.Rotate(Vector3.up * mouseX);
+    }
+
+    void HandleMovement()
     {
         IsGrounded = characterController.isGrounded;
+
         if (IsGrounded && Velocity.y < 0)
-        {
-            if (externalVelocity.y > -0.05f && externalVelocity.y < 0.05f)
-            {
-                Velocity.y = 0;
-            }
-            else
-            {
-                Velocity.y = -2f;
-            }
-        }
+            Velocity.y = -2f;
+
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
-
         Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
+
         IsMoving = inputDirection.magnitude > 0.1f;
         Vector3 moveDirection = Vector3.zero;
+
         if (IsMoving)
         {
             moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
+
+            // ⚠️ Solo rotamos si NO está en modo de giro libre
+            if (!isSpinActive)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            }
+
             bool isSprinting = Input.GetKey(KeyCode.LeftShift);
             currentSpeed = isSprinting ? SprintSpeed : WalkSpeed;
         }
+        else
+        {
+            currentSpeed = 0f;
+        }
+
         if (Input.GetButtonDown("Jump") && IsGrounded)
         {
             Velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             animator?.SetBool("isJumping", true);
-
         }
+
         Velocity.y += gravity * Time.deltaTime;
+
+        // 🔹 Movimiento del jugador
         Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;
         finalMovement.y += Velocity.y * Time.deltaTime;
+
+        // 🔹 Si está sobre una plataforma, añade su desplazamiento
+        if (currentPlatform != null)
+        {
+            Vector3 platformMovement = currentPlatform.position - lastPlatformPosition;
+            finalMovement += platformMovement;
+            lastPlatformPosition = currentPlatform.position;
+        }
 
         characterController.Move(finalMovement);
 
         if (IsGrounded && Velocity.y < 0f)
-        {
             animator?.SetBool("isJumping", false);
-        }
     }
 
-
-    void HandleRotation()
+    void UpdateAnimator()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        yaw += mouseX;
-
-        if (IsMoving)
-        {
-            cameraTransform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0f, yaw, 0f), rotationSpeed * Time.deltaTime);
-        }
-    }
-
-    void updateAnimate()
-    {
-        float SpeedPercent = IsMoving ? (currentSpeed == SprintSpeed ? 1f : 0.5f) : 0f;
-
-        animator?.SetFloat("Speed", SpeedPercent, 0.1f, Time.deltaTime);
+        float speedPercent = IsMoving ? (currentSpeed == SprintSpeed ? 1f : 0.5f) : 0f;
+        animator?.SetFloat("Speed", speedPercent, 0.1f, Time.deltaTime);
         animator?.SetBool("IsGrounded", IsGrounded);
         animator?.SetFloat("VerticalSpeed", Velocity.y);
     }
 
+    // 🔹 Detecta si el player está sobre una plataforma
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.collider.GetComponent<MovingPlatform>() != null)
+        {
+            if (Vector3.Dot(hit.normal, Vector3.up) > 0.5f)
+            {
+                currentPlatform = hit.collider.transform;
+                lastPlatformPosition = currentPlatform.position;
+            }
+        }
+    }
 
-    
+    private void LateUpdate()
+    {
+        if (!IsGrounded || (currentPlatform != null && Vector3.Distance(transform.position, currentPlatform.position) > 5f))
+        {
+            currentPlatform = null;
+        }
+    }
+
+    // 🔹 Giro tipo Crash (se mantiene mientras presionas E)
+    void HandleSpin()
+    {
+        if (Input.GetKey(KeyCode.E))
+        {
+            isSpinActive = true;
+            transform.Rotate(Vector3.up, spinSpeed * Time.deltaTime, Space.World);
+        }
+        else
+        {
+            isSpinActive = false;
+        }
+    }
 }
