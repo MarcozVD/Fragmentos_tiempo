@@ -6,11 +6,11 @@ using UnityEngine;
 public class newCharacterController : MonoBehaviour
 {
     [Header("Movimiento")]
-    public float WalkSpeed = 4f;
-    public float SprintSpeed = 6f;
-    public float jumpHeight = 2f;
+    public float WalkSpeed = 8f;
+    public float SprintSpeed = 12f;
+    public float jumpHeight = 5f;
     public float rotationSpeed = 10f;
-    public float mouseSensitivity = 1f;
+    public float mouseSensitivity = 150f;
     public float gravity = -20f;
 
     [Header("Referencias")]
@@ -20,21 +20,20 @@ public class newCharacterController : MonoBehaviour
     private CharacterController characterController;
     private Vector3 Velocity;
     private float currentSpeed;
-    private float yaw;
     private Vector3 externalVelocity = Vector3.zero;
 
     public bool IsMoving { get; private set; }
     public bool IsGrounded { get; private set; }
 
-    // 🔹 Variables para plataforma
     private Transform currentPlatform;
     private Vector3 lastPlatformPosition;
 
-    // 🔹 Giro tipo Crash
     [Header("Giro tipo Crash")]
-    public float spinSpeed = 1080f; // velocidad del giro (grados/seg)
+    public float spinSpeed = 1080f;
     private bool isSpinActive = false;
-    private bool canSpin = false; // solo se activa al recoger la jeringa
+    private bool canSpin = false;
+
+    private Vector3 externalForce = Vector3.zero;
 
     void Start()
     {
@@ -45,12 +44,16 @@ public class newCharacterController : MonoBehaviour
 
     void Update()
     {
+        // 🔹 PREVENCIÓN DEL ERROR
+        if (!characterController.enabled) 
+            return;
+
         HandleCameraRotation();
         HandleMovement();
         HandleSpin();
         UpdateAnimator();
 
-        // Aplicar fuerza externa (como rebote)
+        // Fuerza externa (corregido)
         if (externalForce.magnitude > 0.1f)
         {
             characterController.Move(externalForce * Time.deltaTime);
@@ -60,9 +63,8 @@ public class newCharacterController : MonoBehaviour
 
     void HandleCameraRotation()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
-        yaw += mouseX;
-        cameraTransform.Rotate(Vector3.up * mouseX);
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        transform.Rotate(Vector3.up * mouseX);
     }
 
     void HandleMovement()
@@ -74,17 +76,18 @@ public class newCharacterController : MonoBehaviour
 
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
-        Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
 
+        Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
         IsMoving = inputDirection.magnitude > 0.1f;
 
         Vector3 moveDirection = Vector3.zero;
 
         if (IsMoving)
         {
-            moveDirection = Quaternion.Euler(0f, cameraTransform.eulerAngles.y, 0f) * inputDirection;
+            moveDirection = (cameraTransform.forward * vertical + cameraTransform.right * horizontal);
+            moveDirection.y = 0f;
+            moveDirection.Normalize();
 
-            // Solo rotamos si no está girando
             if (!isSpinActive)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
@@ -151,7 +154,6 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // 🔹 Giro tipo Crash
     void HandleSpin()
     {
         if (canSpin && Input.GetKey(KeyCode.E))
@@ -165,20 +167,17 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // 🔹 Habilitar giro
     public void EnableSpinAbility()
     {
         canSpin = true;
         Debug.Log("Habilidad de giro activada");
     }
 
-    private Vector3 externalForce = Vector3.zero;
     public void ApplyExternalForce(Vector3 force)
     {
         externalForce = force;
     }
 
-    // 🔹 Método público para que JumpKill detecte si está girando
     public bool IsSpinning()
     {
         return isSpinActive;
