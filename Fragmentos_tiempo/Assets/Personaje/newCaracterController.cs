@@ -25,8 +25,8 @@ public class newCharacterController : MonoBehaviour
     public bool IsMoving { get; private set; }
     public bool IsGrounded { get; private set; }
 
-    private Transform currentPlatform;
-    private Vector3 lastPlatformPosition;
+    // Plataforma actual (SOLO ESTA)
+    private MovingPlatform currentPlatform;
 
     [Header("Giro tipo Crash")]
     public float spinSpeed = 1080f;
@@ -44,16 +44,15 @@ public class newCharacterController : MonoBehaviour
 
     void Update()
     {
-        // 🔹 PREVENCIÓN DEL ERROR
-        if (!characterController.enabled) 
+        if (!characterController.enabled)
             return;
 
         HandleCameraRotation();
+        CheckPlatform();     // ← Detecta plataforma antes de mover
         HandleMovement();
         HandleSpin();
         UpdateAnimator();
 
-        // Fuerza externa (corregido)
         if (externalForce.magnitude > 0.1f)
         {
             characterController.Move(externalForce * Time.deltaTime);
@@ -113,13 +112,15 @@ public class newCharacterController : MonoBehaviour
         Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;
         finalMovement.y += Velocity.y * Time.deltaTime;
 
+        // ---------- MOVIMIENTO CON PLATAFORMA ----------
+        // --- MOVER AL JUGADOR CON LA PLATAFORMA ---
         if (currentPlatform != null)
         {
-            Vector3 platformMovement = currentPlatform.position - lastPlatformPosition;
-            finalMovement += platformMovement;
-            lastPlatformPosition = currentPlatform.position;
+            characterController.Move(currentPlatform.DeltaMovement);
         }
 
+
+        // Movimiento normal del jugador
         characterController.Move(finalMovement);
 
         if (IsGrounded && Velocity.y < 0f)
@@ -134,25 +135,30 @@ public class newCharacterController : MonoBehaviour
         animator?.SetFloat("VerticalSpeed", Velocity.y);
     }
 
-    private void OnControllerColliderHit(ControllerColliderHit hit)
+    void CheckPlatform()
     {
-        if (hit.collider.GetComponent<MovingPlatform>() != null)
-        {
-            if (Vector3.Dot(hit.normal, Vector3.up) > 0.5f)
-            {
-                currentPlatform = hit.collider.transform;
-                lastPlatformPosition = currentPlatform.position;
-            }
-        }
-    }
+        RaycastHit hit;
 
-    private void LateUpdate()
-    {
-        if (!IsGrounded || (currentPlatform != null && Vector3.Distance(transform.position, currentPlatform.position) > 5f))
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
+        float rayDistance = 1.5f;
+
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, rayDistance))
+        {
+            currentPlatform = hit.collider.GetComponent<MovingPlatform>();
+        }
+        else
         {
             currentPlatform = null;
         }
     }
+
+
+    private void LateUpdate()
+    {
+        if (!characterController.isGrounded)
+            currentPlatform = null;
+    }
+
 
     void HandleSpin()
     {
