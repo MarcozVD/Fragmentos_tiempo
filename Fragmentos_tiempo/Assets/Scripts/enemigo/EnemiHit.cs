@@ -3,6 +3,10 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class EnemiHit : MonoBehaviour
 {
+    [Header("Flash por daño")]
+    private HitFlash hitFlash;
+
+    
     [Header("Daño por contacto")]
     public float damageTime = 5f;          // segundos que se restan
     public float damageInterval = 1f;      // tiempo entre cada daño
@@ -13,6 +17,10 @@ public class EnemiHit : MonoBehaviour
 
     void Start()
     {
+        hitFlash = FindObjectOfType<HitFlash>();
+        if (hitFlash == null)
+            Debug.LogError("❌ No se encontró HitFlash en la escena.");
+
         cronometro = FindObjectOfType<Cronometro>();
         if (cronometro == null)
             Debug.LogError("❌ No se encontró el Cronometro en la escena.");
@@ -32,6 +40,8 @@ public class EnemiHit : MonoBehaviour
         if (other.CompareTag("Player") && Time.time >= nextDamageTime)
         {
             cronometro.AddTime(-damageTime);
+            hitFlash.Flash();
+
             Debug.Log($"💥 Golpe enemigo - {damageTime}s menos. Tiempo actual: {cronometro.RemainingTime}");
 
             // 🌀 Retroceso
