@@ -2,38 +2,63 @@ using UnityEngine;
 
 public class EnemyMovement : MonoBehaviour
 {
-    public enum MovementType { Horizontal, Vertical } // Tipo de movimiento
-    public MovementType movementType = MovementType.Horizontal;
+    [Header("Ejes de movimiento")]
+    public bool moveX = true;
+    public bool startRight = true;      // Dirección inicial en X
+
+    public bool moveY = false;
+    public bool startUp = true;         // Dirección inicial en Y
+
+    public bool moveZ = false;
+    public bool startForward = true;    // Dirección inicial en Z
+
+    [Header("Distancias por eje")]
+    public float distanceX = 3f;
+    public float distanceY = 3f;
+    public float distanceZ = 3f;
 
     [Header("Movimiento")]
-    public float speed = 2f;           // Velocidad de movimiento
-    public float distance = 3f;        // Distancia total del recorrido
+    public float speed = 2f;
 
-    private Vector3 startPosition;     // Posición inicial
-    private int direction = 1;         // 1 o -1 según la dirección actual
+    private Vector3 startPos;
+    private Vector3 direction;
 
     void Start()
     {
-        startPosition = transform.position;
+        startPos = transform.position;
+
+        direction = new Vector3(
+            moveX ? (startRight ? 1 : -1) : 0,
+            moveY ? (startUp ? 1 : -1) : 0,
+            moveZ ? (startForward ? 1 : -1) : 0
+        );
     }
 
     void Update()
     {
-        if (movementType == MovementType.Horizontal)
+        transform.Translate(direction * speed * Time.deltaTime);
+
+        Vector3 offset = transform.position - startPos;
+
+        // Eje X
+        if (moveX && Mathf.Abs(offset.x) >= distanceX)
         {
-            transform.Translate(Vector3.right * direction * speed * Time.deltaTime);
-            if (Mathf.Abs(transform.position.x - startPosition.x) >= distance)
-            {
-                direction *= -1; // Cambia de dirección
-            }
+            direction.x *= -1;
+            startPos.x = transform.position.x; // Reiniciar origen
         }
-        else if (movementType == MovementType.Vertical)
+
+        // Eje Y
+        if (moveY && Mathf.Abs(offset.y) >= distanceY)
         {
-            transform.Translate(Vector3.up * direction * speed * Time.deltaTime);
-            if (Mathf.Abs(transform.position.y - startPosition.y) >= distance)
-            {
-                direction *= -1; // Cambia de dirección
-            }
+            direction.y *= -1;
+            startPos.y = transform.position.y;
+        }
+
+        // Eje Z
+        if (moveZ && Mathf.Abs(offset.z) >= distanceZ)
+        {
+            direction.z *= -1;
+            startPos.z = transform.position.z;
         }
     }
 }
