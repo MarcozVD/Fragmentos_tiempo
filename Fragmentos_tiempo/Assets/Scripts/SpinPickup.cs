@@ -3,6 +3,7 @@ using UnityEngine;
 public class SyringePickup : MonoBehaviour
 {
     public AudioClip pickupSound;
+    public FadeText unlockAbilityText;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -10,14 +11,14 @@ public class SyringePickup : MonoBehaviour
 
         if (player != null)
         {
-            // Activa la habilidad de girar
             player.EnableSpinAbility();
 
-            // Sonido opcional
             if (pickupSound != null)
                 AudioSource.PlayClipAtPoint(pickupSound, transform.position);
 
-            // Destruye la jeringa
+            if (unlockAbilityText != null)
+                unlockAbilityText.ShowMessage();
+
             Destroy(gameObject);
         }
     }
