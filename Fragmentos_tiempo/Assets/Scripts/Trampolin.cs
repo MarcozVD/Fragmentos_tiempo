@@ -44,6 +44,8 @@ public class Trampolin : MonoBehaviour
             player.transform.position = pos;
             controller.enabled = true;
 
+            Debug.Log("Trampolin Jumping...");
+
             yield return null;
         }
 

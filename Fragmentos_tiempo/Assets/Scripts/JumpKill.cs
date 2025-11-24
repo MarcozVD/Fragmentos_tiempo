@@ -37,6 +37,8 @@ public class JumpKill : MonoBehaviour
             // Rebote del jugador hacia arriba
             controller.ApplyExternalForce(Vector3.up * bounceForce);
 
+            Debug.Log("Enemy JumpKilled!");
+
             // Matar enemigo
             KillEnemy();
         }
