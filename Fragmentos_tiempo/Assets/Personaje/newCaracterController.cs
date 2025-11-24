@@ -25,7 +25,7 @@ public class newCharacterController : MonoBehaviour
     public bool IsMoving { get; private set; }
     public bool IsGrounded { get; private set; }
 
-    // Plataforma actual
+    // Plataforma actual (SOLO ESTA)
     private MovingPlatform currentPlatform;
 
     [Header("Giro tipo Crash")]
@@ -43,17 +43,16 @@ public class newCharacterController : MonoBehaviour
     }
 
     void Update()
-    {
+    { 
         if (!characterController.enabled)
             return;
 
         HandleCameraRotation();
-        CheckPlatform();
+        CheckPlatform();     // ← Detecta plataforma antes de mover
         HandleMovement();
         HandleSpin();
         UpdateAnimator();
 
-        // Aplicar fuerza externa si existe
         if (externalForce.magnitude > 0.1f)
         {
             characterController.Move(externalForce * Time.deltaTime);
@@ -61,18 +60,12 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // -------------------------
-    // ROTACIÓN DE LA CÁMARA
-    // -------------------------
     void HandleCameraRotation()
     {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         transform.Rotate(Vector3.up * mouseX);
     }
 
-    // -------------------------
-    // MOVIMIENTO PRINCIPAL
-    // -------------------------
     void HandleMovement()
     {
         IsGrounded = characterController.isGrounded;
@@ -108,7 +101,6 @@ public class newCharacterController : MonoBehaviour
             currentSpeed = 0f;
         }
 
-        // SALTO
         if (Input.GetButtonDown("Jump") && IsGrounded)
         {
             Velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -120,37 +112,29 @@ public class newCharacterController : MonoBehaviour
         Vector3 finalMovement = (moveDirection * currentSpeed + externalVelocity) * Time.deltaTime;
         finalMovement.y += Velocity.y * Time.deltaTime;
 
-        // Movimiento con plataforma
+        // ---------- MOVIMIENTO CON PLATAFORMA ----------
+        // --- MOVER AL JUGADOR CON LA PLATAFORMA ---
         if (currentPlatform != null)
+        {
             characterController.Move(currentPlatform.DeltaMovement);
+        }
 
-        // Movimiento normal
+
+        // Movimiento normal del jugador
         characterController.Move(finalMovement);
 
-        // FIN DEL SALTO cuando toca suelo
         if (IsGrounded && Velocity.y < 0f)
             animator?.SetBool("isJumping", false);
     }
 
-    // -------------------------
-    // ANIMACIONES
-    // -------------------------
     void UpdateAnimator()
     {
-        // Walk = 0.5    Run = 1    Idle = 0
-        float speedPercent = IsMoving ?
-            (currentSpeed == SprintSpeed ? 1f : 0.5f) :
-            0f;
-
+        float speedPercent = IsMoving ? (currentSpeed == SprintSpeed ? 1f : 0.5f) : 0f;
         animator?.SetFloat("Speed", speedPercent, 0.1f, Time.deltaTime);
         animator?.SetBool("IsGrounded", IsGrounded);
         animator?.SetFloat("VerticalSpeed", Velocity.y);
-        animator?.SetBool("IsSpinning", isSpinActive);  // ← agregado para animación de spin
     }
 
-    // -------------------------
-    // DETECCIÓN DE PLATAFORMAS
-    // -------------------------
     void CheckPlatform()
     {
         RaycastHit hit;
@@ -168,15 +152,14 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
+
     private void LateUpdate()
     {
         if (!characterController.isGrounded)
             currentPlatform = null;
     }
 
-    // -------------------------
-    // GIRO (SPIN)
-    // -------------------------
+
     void HandleSpin()
     {
         if (canSpin && Input.GetKey(KeyCode.E))
@@ -190,14 +173,12 @@ public class newCharacterController : MonoBehaviour
         }
     }
 
-    // ACTIVAR habilidad spin desde otros scripts
     public void EnableSpinAbility()
     {
         canSpin = true;
         Debug.Log("Habilidad de giro activada");
     }
 
-    // GOLPES O EMPUJES EXTERNOS
     public void ApplyExternalForce(Vector3 force)
     {
         externalForce = force;
