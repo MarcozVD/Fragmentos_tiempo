@@ -21,8 +21,13 @@ public class HitFlash : MonoBehaviour
             return;
         }
 
+        SetAlpha(0f); // Forzar invisible al inicio
+    }
+
+    private void SetAlpha(float a)
+    {
         Color c = vignetteImage.color;
-        c.a = 0f;
+        c.a = a;
         vignetteImage.color = c;
     }
 
@@ -36,25 +41,22 @@ public class HitFlash : MonoBehaviour
 
     private IEnumerator FlashEffect()
     {
-        Color c = vignetteImage.color;
+        float a = vignetteImage.color.a;
 
-        // Fade IN
-        while (c.a < maxAlpha)
+        while (a < maxAlpha)
         {
-            c.a += Time.deltaTime * fadeInSpeed;
-            vignetteImage.color = c;
+            a += Time.unscaledDeltaTime * fadeInSpeed;
+            SetAlpha(a);
             yield return null;
         }
 
-        // Fade OUT
-        while (c.a > 0f)
+        while (a > 0f)
         {
-            c.a -= Time.deltaTime * fadeOutSpeed;
-            vignetteImage.color = c;
+            a -= Time.unscaledDeltaTime * fadeOutSpeed;
+            SetAlpha(a);
             yield return null;
         }
 
-        c.a = 0f;
-        vignetteImage.color = c;
+        SetAlpha(0f);
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 public class FadeController : MonoBehaviour
 {
@@ -25,14 +26,14 @@ public class FadeController : MonoBehaviour
             StartCoroutine(FadeRoutine(1f, 0f));
     }
 
-    private System.Collections.IEnumerator FadeRoutine(float start, float end)
+    private IEnumerator FadeRoutine(float start, float end)
     {
         isFading = true;
-
         float t = 0;
+
         while (t < FadeDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             float a = Mathf.Lerp(start, end, t / FadeDuration);
             fadeImage.color = new Color(0, 0, 0, a);
             yield return null;

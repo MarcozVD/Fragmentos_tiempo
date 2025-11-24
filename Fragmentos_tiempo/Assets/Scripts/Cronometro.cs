@@ -1,24 +1,23 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class Cronometro : MonoBehaviour
 {
     [Header("Tiempo inicial (segundos)")]
-    public float startTime = 120f; // 2 minutos
+    public float startTime = 120f;
 
-    [Header("Referencia UI")]
+    [Header("UI")]
     public TextMeshProUGUI timerText;
 
+    [Header("Pantalla de Perdiste")]
+    public FadeCanvas fadePerdiste;
+
     private float currentTime;
-    private bool isRunning = true;
+    private bool isRunning = false;
+    private bool gameOverTriggered = false;
 
-    // 🔹 Propiedad pública para consultar el tiempo restante
     public float RemainingTime => currentTime;
-
-    void Start()
-    {
-        currentTime = startTime;
-    }
 
     void Update()
     {
@@ -26,11 +25,12 @@ public class Cronometro : MonoBehaviour
 
         currentTime -= Time.deltaTime;
 
-        if (currentTime <= 0)
+        if (currentTime <= 0 && !gameOverTriggered)
         {
             currentTime = 0;
             isRunning = false;
-            // Aquí puedes hacer que termine el juego o mostrar "Tiempo agotado"
+            gameOverTriggered = true;
+            StartCoroutine(GameOverRoutine());
         }
 
         UpdateTimerDisplay();
@@ -38,14 +38,66 @@ public class Cronometro : MonoBehaviour
 
     void UpdateTimerDisplay()
     {
-        int minutes = Mathf.FloorToInt(currentTime / 60);
-        int seconds = Mathf.FloorToInt(currentTime % 60);
-        timerText.text = $"{minutes:00}:{seconds:00}";
+        if (timerText == null)
+            timerText = FindObjectOfType<TextMeshProUGUI>();
+
+        if (timerText != null)
+        {
+            int minutes = Mathf.FloorToInt(currentTime / 60);
+            int seconds = Mathf.FloorToInt(currentTime % 60);
+            timerText.text = $"{minutes:00}:{seconds:00}";
+        }
     }
 
-    // 🔹 Método público para añadir o restar tiempo desde otro script
     public void AddTime(float amount)
     {
         currentTime += amount;
+    }
+
+    private IEnumerator GameOverRoutine()
+    {
+        yield return new WaitForSeconds(3f);
+
+        if (timerText != null)
+            timerText.enabled = false;
+
+        if (fadePerdiste != null)
+            yield return fadePerdiste.FadeIn();
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
+        Time.timeScale = 0f;
+    }
+
+    public void ResetTimer()
+    {
+        currentTime = startTime;
+        isRunning = true;
+        gameOverTriggered = false;
+
+        // 🔹 Buscar texto si es null o destruido
+        if (timerText == null)
+            timerText = FindObjectOfType<TextMeshProUGUI>();
+
+        if (timerText != null)
+        {
+            timerText.gameObject.SetActive(true);
+            timerText.enabled = true;
+            UpdateTimerDisplay();
+        }
+
+        // Cerrar pantalla de "Perdiste"
+        if (fadePerdiste != null)
+        {
+            fadePerdiste.canvasGroup.alpha = 0f;
+            fadePerdiste.canvasGroup.interactable = false;
+            fadePerdiste.canvasGroup.blocksRaycasts = false;
+        }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
+        Time.timeScale = 1f;
     }
 }
